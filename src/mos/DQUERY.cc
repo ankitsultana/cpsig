@@ -3,6 +3,10 @@ using namespace std;
 
 const int MAXVAL = 1e6 + 1;
 
+/* Sort queries first by the block in which
+ * the left end point resides. If that block
+ * is same, sort by right end point.
+ */
 struct QueryData {
 	static int rootq;
 	int l, r, idx;
@@ -16,6 +20,11 @@ struct QueryData {
 
 int QueryData::rootq = 0;
 
+/* Active set that maintains the number of distinct elements
+ * it has. `dist` stores exactly that. `cnt` is a vector
+ * such that cnt[val] stores the number of times val occurs
+ * in the active set.
+ */
 struct ActiveSet {
 	int dist;
 	vector<int> cnt;
@@ -28,6 +37,10 @@ struct ActiveSet {
 	}
 };
 
+/* `curr_l` and `curr_r` represent that the Active Set
+ * stores information regarding the range [curr_l, curr_r]
+ * Initially, they are set to (0, -1) respectively.
+ */
 int main() {
 	int n, q;
 	scanf("%d", &n);
@@ -39,7 +52,7 @@ int main() {
 	vector<int> ans(q);
 	for(int qc = 0; qc < q; qc++) {
 		scanf("%d %d", &qs[qc].l, &qs[qc].r);
-		qs[qc].l--, qs[qc].r--;
+		qs[qc].l--, qs[qc].r--; // We are using zero based indexing
 		qs[qc].idx = qc;
 	}
 	sort(qs.begin(), qs.end());
