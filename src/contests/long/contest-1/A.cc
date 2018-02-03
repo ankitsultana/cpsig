@@ -1,3 +1,5 @@
+// Gives MLE. Replacing Policy Based DS with Treaps/Implicit Segtrees
+// should work.
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -21,9 +23,7 @@ struct QueryData {
 	int type;
 } qs[MAXN];
 
-struct node {
-	ordered_set s;
-} segtree[MAXN*4];
+ordered_set segtree[100 + (1 << 19)];
 int arr[MAXN];
 
 template<typename T>
@@ -44,14 +44,14 @@ struct Compressor {
 };
 
 void Insert(int val, int idx, int root, int l, int r) {
-	segtree[root].s.insert(idx);
+	segtree[root].insert(idx);
 	if(l == r) return ;
 	int mid = (l + r) >> 1;
 	if(val <= mid) Insert(val, idx, root*2, l, mid);
 	else Insert(val, idx, root*2+1, mid+1, r);
 }
 void Remove(int val, int idx, int root, int l, int r) {
-	segtree[root].s.erase(idx);
+	segtree[root].erase(idx);
 	if(l == r) return ;
 	int mid = (l + r) >> 1;
 	if(val <= mid) Remove(val, idx, root*2, l, mid);
@@ -62,8 +62,8 @@ int Query(int ql, int qr, int qk, int root, int l, int r) {
 		return l;
 	}
 	int mid = (l + r) >> 1;
-	int num_elems = segtree[root*2].s.order_of_key(qr + 1) -
-		segtree[root*2].s.order_of_key(ql);
+	int num_elems = segtree[root*2].order_of_key(qr + 1) -
+		segtree[root*2].order_of_key(ql);
 	if(num_elems >= qk) {
 		return Query(ql, qr, qk, root * 2, l, mid);
 	} else {
@@ -78,34 +78,38 @@ void Update(int idx, int val, int c_size) {
 
 int main() {
 	int n, opt, q, l, r, k, v;
-	Compressor<int> compressor;
-	scanf("%d", &n);
-	for(int i = 1; i <= n; i++) {
-		scanf("%d", &arr[i]);
-		compressor.Add(arr[i]);
-	}
-	scanf("%d", &q);
-	for(int i = 0; i < q; i++) {
-		scanf("%d", &opt);
-		qs[i].type = opt;
-		if(opt == 1) {
-			scanf("%d %d", &qs[i].l, &qs[i].v);
-			compressor.Add(qs[i].v);
-		} else {
-			scanf("%d %d %d", &qs[i].l, &qs[i].r, &qs[i].k);
+	while(scanf("%d", &n) != EOF) {
+		Compressor<int> compressor;
+		for(int i = 1; i <= n; i++) {
+			scanf("%d", &arr[i]);
+			compressor.Add(arr[i]);
 		}
-	}
-	compressor.Build();
-	for(int i = 1; i <= n; i++) {
-		arr[i] = compressor.Get(arr[i]);
-		Insert(arr[i], i, 1, 1, compressor.size());
-	}
-	for(int i = 0; i < q; i++) {
-		if(qs[i].type == 2) { // Query
-			int temp = Query(qs[i].l, qs[i].r, qs[i].k, 1, 1, compressor.size());
-			printf("%d\n", compressor.Uncompress(temp));
-		} else {            // Update
-			Update(qs[i].l, compressor.Get(qs[i].v), compressor.size());
+		scanf("%d", &q);
+		for(int i = 0; i < q; i++) {
+			scanf("%d", &opt);
+			qs[i].type = opt;
+			if(opt == 1) {
+				scanf("%d %d", &qs[i].l, &qs[i].v);
+				compressor.Add(qs[i].v);
+			} else {
+				scanf("%d %d %d", &qs[i].l, &qs[i].r, &qs[i].k);
+			}
+		}
+		compressor.Build();
+		for(int i = 1; i <= n; i++) {
+			arr[i] = compressor.Get(arr[i]);
+			Insert(arr[i], i, 1, 1, compressor.size());
+		}
+		for(int i = 0; i < q; i++) {
+			if(qs[i].type == 2) { // Query
+				int temp = Query(qs[i].l, qs[i].r, qs[i].k, 1, 1, compressor.size());
+				printf("%d\n", compressor.Uncompress(temp));
+			} else {            // Update
+				Update(qs[i].l, compressor.Get(qs[i].v), compressor.size());
+			}
+		}
+		for(int i = 1; i <= n; i++) {
+			Remove(arr[i], i, 1, 1, compressor.size());
 		}
 	}
 	return 0;
